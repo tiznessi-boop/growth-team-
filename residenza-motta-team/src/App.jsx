@@ -53,47 +53,76 @@ function WeatherBanner(){
   }
   const active=signals.filter(s=>s.isSignal);
   const hasSignal=active.length>0;
-  const rateReco=s=>s>=4?{pct:"+30–35%",color:"#D85A30"}:s>=3?{pct:"+20–25%",color:"#BA7517"}:{pct:"+15–20%",color:"#1D9E75"};
+  const rateReco=s=>s>=4?{pct:"+30–35%",color:"#FF6B35",bg:"#2A1000"}:s>=3?{pct:"+20–25%",color:"#FFB347",bg:"#1E1500"}:{pct:"+15–20%",color:"#4AE08A",bg:"#001A0E"};
+  const ROW_EVEN="#0E1624", ROW_ODD="#0B1220", ROW_SIGNAL="#071A0D";
   return(
-    <div style={{background:hasSignal?"#0A1A0E":"#0C1120",border:`1px solid ${hasSignal?"#1D9E7555":"#141E30"}`,borderRadius:14,marginBottom:24,overflow:"hidden"}}>
-      <div onClick={()=>wStatus==="ok"&&setExpanded(e=>!e)} style={{padding:"12px 18px",display:"flex",alignItems:"center",gap:12,cursor:wStatus==="ok"?"pointer":"default"}}>
-        <span style={{fontSize:18}}>{wStatus==="loading"?"⏳":hasSignal?"🚨":"😴"}</span>
+    <div style={{background:hasSignal?"#071A0D":"#0C1120",border:`2px solid ${hasSignal?"#1D9E75":"#1E2838"}`,borderRadius:16,marginBottom:28,overflow:"hidden"}}>
+      {/* Banner header */}
+      <div onClick={()=>wStatus==="ok"&&setExpanded(e=>!e)} style={{padding:"16px 20px",display:"flex",alignItems:"center",gap:14,cursor:wStatus==="ok"?"pointer":"default",borderBottom:expanded?"1px solid #141E30":"none"}}>
+        <span style={{fontSize:28}}>{wStatus==="loading"?"⏳":hasSignal?"🚨":"😴"}</span>
         <div style={{flex:1}}>
-          <div style={{fontSize:12,fontWeight:500,color:hasSignal?"#1D9E75":"#3A4A5C"}}>
+          <div style={{fontSize:16,fontWeight:600,color:hasSignal?"#4AE08A":"#4A5A6C",letterSpacing:"0.01em"}}>
             {wStatus==="loading"&&"Caricamento meteo MeteoSwiss…"}
             {wStatus==="error"&&"Errore dati meteo — riprova"}
-            {wStatus==="ok"&&(hasSignal?`SEGNALE ATTIVO · ${active.length} giorn${active.length===1?"o":"i"} · Alza i prezzi ora`:"Nessun segnale meteo questa settimana · Prezzi invariati")}
+            {wStatus==="ok"&&(hasSignal?`🚨 SEGNALE ATTIVO · ${active.length} giorn${active.length===1?"o":"i"} · Alza i prezzi ora`:"😴 Nessun segnale questa settimana · Prezzi invariati")}
           </div>
-          {wStatus==="ok"&&hasSignal&&<div style={{fontSize:11,color:"#4A7A5C",marginTop:2}}>{active.map(s=>`${dayLabel(s.date)} ${s.lWmo.icon} ${s.lTemp}°C vs nord ${s.avgNorthTemp}°C`).join(" · ")}</div>}
+          {wStatus==="ok"&&hasSignal&&(
+            <div style={{fontSize:13,color:"#2E9E60",marginTop:4}}>
+              {active.map(s=>`${dayLabel(s.date)} ${s.lWmo.icon} ${s.lTemp}°C Locarno vs ${s.avgNorthTemp}°C nord (+${s.delta}°C)`).join("  ·  ")}
+            </div>
+          )}
+          {wStatus==="ok"&&!hasSignal&&(
+            <div style={{fontSize:13,color:"#2A3848",marginTop:4}}>Nessun differenziale meteo significativo tra Locarno e le città svizzero-tedesche</div>
+          )}
         </div>
-        <div style={{display:"flex",gap:8,alignItems:"center"}}>
-          <button onClick={e=>{e.stopPropagation();loadWeather();}} style={{background:"none",border:"1px solid #141E30",borderRadius:6,padding:"4px 10px",color:"#3A4A5C",fontSize:11,cursor:"pointer"}}>↻</button>
-          {wStatus==="ok"&&<span style={{fontSize:11,color:"#252E3C"}}>{expanded?"▲":"▼"}</span>}
+        <div style={{display:"flex",gap:10,alignItems:"center",flexShrink:0}}>
+          <button onClick={e=>{e.stopPropagation();loadWeather();}} style={{background:"none",border:"1px solid #1E2838",borderRadius:8,padding:"6px 14px",color:"#4A6A8A",fontSize:13,cursor:"pointer"}}>↻ Aggiorna</button>
+          {wStatus==="ok"&&<span style={{fontSize:14,color:"#2A3848"}}>{expanded?"▲":"▼"}</span>}
         </div>
       </div>
+
+      {/* Expanded table */}
       {expanded&&wStatus==="ok"&&rawResults&&(
-        <div style={{borderTop:"1px solid #141E30"}}>
-          <div style={{display:"grid",gridTemplateColumns:"110px repeat(4,1fr) 70px",padding:"8px 16px 4px",borderBottom:"1px solid #0F1828"}}>
-            {["","Locarno","Zürich","Bern","Luzern","Signal"].map((h,i)=>(
-              <div key={i} style={{fontSize:9.5,color:"#1E2838",textTransform:"uppercase",letterSpacing:"0.1em",textAlign:i===5?"center":"left"}}>{h}</div>
+        <div>
+          {/* Column headers */}
+          <div style={{display:"grid",gridTemplateColumns:"130px repeat(4,1fr) 90px",padding:"10px 20px 8px",background:"#080E18",borderBottom:"1px solid #141E30"}}>
+            {["","Locarno ☀️","Zürich","Bern","Luzern","Segnale"].map((h,i)=>(
+              <div key={i} style={{fontSize:11,color:"#3A5A7A",textTransform:"uppercase",letterSpacing:"0.12em",fontWeight:500,textAlign:i===5?"center":"left"}}>{h}</div>
             ))}
           </div>
-          {signals.map((sig,i)=>(
-            <div key={i} style={{display:"grid",gridTemplateColumns:"110px repeat(4,1fr) 70px",padding:"8px 16px",borderBottom:i<6?"1px solid #0A1020":"none",background:sig.isSignal?"#0A1A0E":"transparent",alignItems:"center"}}>
-              <div style={{fontSize:11.5,color:sig.isSignal?"#9FE1CB":"#3A4A5C"}}>{dayLabel(sig.date)}</div>
-              {rawResults.map((loc,li)=>{const w=getWmo(loc.weathercode[i]);return(
-                <div key={li} style={{fontSize:12}}>
-                  <span>{w.icon}</span><span style={{color:"#C4B8A4",marginLeft:3}}>{Math.round(loc.temperature_2m_max[i])}°C</span>
-                  {loc.precipitation_probability_max[i]>20&&<span style={{fontSize:10,color:"#2E3A4C",marginLeft:3}}>{loc.precipitation_probability_max[i]}%</span>}
+
+          {/* Rows */}
+          {signals.map((sig,i)=>{
+            const rowBg = sig.isSignal ? ROW_SIGNAL : i%2===0 ? ROW_EVEN : ROW_ODD;
+            const r = rateReco(sig.strength);
+            return(
+              <div key={i} style={{display:"grid",gridTemplateColumns:"130px repeat(4,1fr) 90px",padding:"12px 20px",background:sig.isSignal?ROW_SIGNAL:rowBg,borderBottom:i<6?"1px solid #0A1420":"none",alignItems:"center",borderLeft:sig.isSignal?"3px solid #1D9E75":"3px solid transparent"}}>
+                <div style={{fontSize:14,fontWeight:sig.isSignal?600:400,color:sig.isSignal?"#4AE08A":"#C0D0E0"}}>{dayLabel(sig.date)}</div>
+                {rawResults.map((loc,li)=>{
+                  const w=getWmo(loc.weathercode[i]);
+                  const temp=Math.round(loc.temperature_2m_max[i]);
+                  const precip=loc.precipitation_probability_max[i];
+                  return(
+                    <div key={li} style={{fontSize:14,display:"flex",alignItems:"center",gap:5}}>
+                      <span style={{fontSize:16}}>{w.icon}</span>
+                      <span style={{color:li===0?"#FFFFFF":"#A0B8CC",fontWeight:li===0?500:400}}>{temp}°C</span>
+                      {precip>20&&<span style={{fontSize:11,color:"#3A5A7A"}}>{precip}%</span>}
+                    </div>
+                  );
+                })}
+                <div style={{textAlign:"center"}}>
+                  {sig.isSignal?(
+                    <span style={{fontSize:14,color:r.color,fontWeight:700,background:r.bg,padding:"3px 10px",borderRadius:6}}>{r.pct}</span>
+                  ):(
+                    <span style={{color:"#1A2830",fontSize:13}}>—</span>
+                  )}
                 </div>
-              );})}
-              <div style={{textAlign:"center"}}>
-                {sig.isSignal?<span style={{fontSize:11,color:rateReco(sig.strength).color,fontWeight:500}}>{rateReco(sig.strength).pct}</span>:<span style={{color:"#1A2030",fontSize:11}}>—</span>}
               </div>
-            </div>
-          ))}
-          <div style={{padding:"10px 16px",borderTop:"1px solid #0F1828",fontSize:10.5,color:"#1E2838",lineHeight:1.7}}>
-            Fonte: Open-Meteo · Modello MeteoSwiss ICON · Alza prezzi entro mar–mer mattina · 67% prenotazioni last-minute arriva gio–sab
+            );
+          })}
+
+          <div style={{padding:"10px 20px",background:"#080E18",borderTop:"1px solid #141E30",fontSize:12,color:"#1E3048",lineHeight:1.7}}>
+            Fonte: Open-Meteo · Modello MeteoSwiss ICON · ⚡ Alza i prezzi entro martedì–mercoledì mattina · 67% delle prenotazioni last-minute arriva giovedì–sabato
           </div>
         </div>
       )}
@@ -253,7 +282,7 @@ const GOLD = "#9A6218";
 async function callClaude(system, messages, onChunk) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json", "x-api-key": import.meta.env.VITE_ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1000,
