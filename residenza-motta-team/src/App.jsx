@@ -20,7 +20,7 @@ const WMO_MAP = {
 const getWmo = c => WMO_MAP[c] || {label:"?",icon:"❓",score:3};
 async function fetchAllWeather() {
   const results = await Promise.all(WEATHER_LOCATIONS.map(l=>
-    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${l.lat}&longitude=${l.lon}&daily=weathercode,temperature_2m_max,precipitation_probability_max&timezone=Europe%2FZurich&forecast_days=7&models=icon_seamless`)
+    fetch(`https://api.open-meteo.com/v1/forecast?latitude=${l.lat}&longitude=${l.lon}&daily=weathercode,temperature_2m_max,precipitation_probability_max,sunshine_duration&timezone=Europe%2FZurich&forecast_days=7&models=icon_seamless`)
       .then(r=>r.json()).then(d=>d.daily)
   ));
   return results;
@@ -34,9 +34,21 @@ function buildSignals(results) {
     const lTemp=locarno.temperature_2m_max[i];
     const avgNorthTemp=Math.round(north.map(n=>n.temperature_2m_max[i]).reduce((a,b)=>a+b,0)/north.length);
     const delta=Math.round(lTemp-avgNorthTemp);
-    const sunHere=lWmo.score>=8, badNorth=avgNorth<=2;
-    const strength=(sunHere?2:0)+(badNorth?2:0)+(delta>=5?1:0);
-    return {date,lWmo,lTemp:Math.round(lTemp),avgNorthTemp,delta,sunHere,badNorth,strength,isSignal:sunHere&&badNorth};
+    const sunHours=locarno.sunshine_duration?Math.round((locarno.sunshine_duration[i]||0)/3600*10)/10:0;
+    const sunHere=sunHours>=5;
+    const partialSun=sunHours>=3&&sunHours<5;
+    const badNorth=avgNorth<=2;
+    const bigDelta=delta>=8;
+    const hugeDelta=delta>=12;
+    let pts=0;
+    if(sunHere) pts+=2;
+    if(partialSun) pts+=1;
+    if(badNorth) pts+=2;
+    if(bigDelta) pts+=2;
+    if(hugeDelta) pts+=1;
+    const isSignal=pts>=3;
+    const strength=pts;
+    return {date,lWmo,lTemp:Math.round(lTemp),avgNorthTemp,delta,sunHours,sunHere,partialSun,badNorth,bigDelta,strength,isSignal};
   });
 }
 function dayLabel(d){return new Date(d).toLocaleDateString("it-CH",{weekday:"short",day:"numeric",month:"short"});}
@@ -97,7 +109,11 @@ function WeatherBanner(){
             const r = rateReco(sig.strength);
             return(
               <div key={i} style={{display:"grid",gridTemplateColumns:"130px repeat(4,1fr) 90px",padding:"12px 20px",background:sig.isSignal?ROW_SIGNAL:rowBg,borderBottom:i<6?"1px solid #0A1420":"none",alignItems:"center",borderLeft:sig.isSignal?"3px solid #1D9E75":"3px solid transparent"}}>
-                <div style={{fontSize:14,fontWeight:sig.isSignal?600:400,color:sig.isSignal?"#4AE08A":"#C0D0E0"}}>{dayLabel(sig.date)}</div>
+                <div style={{fontSize:14,fontWeight:sig.isSignal?600:400,color:sig.isSignal?"#4AE08A":"#C0D0E0"}}>
+                {dayLabel(sig.date)}
+                {sig.sunHours>0&&<span style={{fontSize:11,color:sig.sunHere?"#FFD700":sig.partialSun?"#B8A040":"#2A3848",marginLeft:6}}>{sig.sunHours}h ☀️</span>}
+                {sig.bigDelta&&<span style={{fontSize:11,color:"#FF8C42",marginLeft:4}}>+{sig.delta}°</span>}
+              </div>
                 {rawResults.map((loc,li)=>{
                   const w=getWmo(loc.weathercode[i]);
                   const temp=Math.round(loc.temperature_2m_max[i]);
