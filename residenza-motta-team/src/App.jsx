@@ -46,7 +46,7 @@ function buildSignals(results) {
     if(badNorth) pts+=2;
     if(bigDelta) pts+=2;
     if(hugeDelta) pts+=1;
-    const isSignal=pts>=3;
+    const isSignal=pts>=2;
     const strength=pts;
     return {date,lWmo,lTemp:Math.round(lTemp),avgNorthTemp,delta,sunHours,sunHere,partialSun,badNorth,bigDelta,strength,isSignal};
   });
