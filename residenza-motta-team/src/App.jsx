@@ -35,8 +35,8 @@ function buildSignals(results) {
     const avgNorthTemp=Math.round(north.map(n=>n.temperature_2m_max[i]).reduce((a,b)=>a+b,0)/north.length);
     const delta=Math.round(lTemp-avgNorthTemp);
     const sunHours=locarno.sunshine_duration?Math.round((locarno.sunshine_duration[i]||0)/3600*10)/10:0;
-    const sunHere=sunHours>=5;
-    const partialSun=sunHours>=3&&sunHours<5;
+    const sunHere=sunHours>=7;
+    const partialSun=sunHours>=5&&sunHours<7;
     const badNorth=avgNorth<=2;
     const bigDelta=delta>=8;
     const hugeDelta=delta>=12;
@@ -46,8 +46,9 @@ function buildSignals(results) {
     if(badNorth) pts+=2;
     if(bigDelta) pts+=2;
     if(hugeDelta) pts+=1;
-    const isSignal=pts>=2;
+    const isSignal=pts>=3;
     const strength=pts;
+    console.log(date,'delta:',delta,'sunHours:',sunHours,'pts:',pts,'isSignal:',isSignal);
     return {date,lWmo,lTemp:Math.round(lTemp),avgNorthTemp,delta,sunHours,sunHere,partialSun,badNorth,bigDelta,strength,isSignal};
   });
 }
