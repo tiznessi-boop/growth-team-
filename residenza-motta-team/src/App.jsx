@@ -405,7 +405,7 @@ const BORDER = "#141E30";
 const GOLD = "#9A6218";
 
 async function callClaude(system, messages, onChunk) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
